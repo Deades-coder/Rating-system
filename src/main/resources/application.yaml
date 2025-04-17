@@ -1,0 +1,25 @@
+spring:
+  application.name: thumb-backend
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/rating?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC-8
+    username: rating
+    password: 123456
+  data:
+    # Redis 配置
+    redis:
+      database: 0
+      host: 192.168.48.136
+      timeout: 5000
+      port: 6379
+  mvc:
+    servlet:
+      path: /api
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+server:
+  port: 8000
+
+
