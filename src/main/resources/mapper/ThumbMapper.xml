@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="yang.example.ratingsystem.mapper.ThumbMapper">
+<mapper namespace="com.yang.ratingsystem.mapper.ThumbMapper">
 
-    <resultMap id="BaseResultMap" type="yang.example.ratingsystem.model.entity.Thumb">
+    <resultMap id="BaseResultMap" type="com.yang.ratingsystem.model.Thumb">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="userId" column="userId" jdbcType="BIGINT"/>
             <result property="blogId" column="blogId" jdbcType="BIGINT"/>

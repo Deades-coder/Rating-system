@@ -2,19 +2,33 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="yang.example.ratingsystem.mapper.BlogMapper">
+<mapper namespace="com.yang.ratingsystem.mapper.BlogMapper">
 
-    <resultMap id="BaseResultMap" type="yang.example.ratingsystem.model.entity.Blog">
+    <resultMap id="BaseResultMap" type="com.yang.ratingsystem.model.Blog">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="title" column="title" jdbcType="VARCHAR"/>
             <result property="coverImg" column="coverImg" jdbcType="VARCHAR"/>
             <result property="content" column="content" jdbcType="VARCHAR"/>
+            <result property="content" column="content" jdbcType="INTEGER"/>
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,title,coverImg,
-        content,createTime,updateTime
+        id,userId,title,
+        coverImg,content,thumbCount,
+        createTime,updateTime
     </sql>
+    <update id="batchUpdateThumbCount">
+        UPDATE blog
+        SET thumbCount = thumbCount + CASE id
+        <foreach collection="countMap.entrySet()" item="value" index="key">
+            WHEN #{key} THEN #{value}
+        </foreach>
+        END
+        WHERE id IN
+        <foreach collection="countMap.keySet()" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>

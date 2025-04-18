@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="yang.example.ratingsystem.mapper.UserMapper">
+<mapper namespace="com.yang.ratingsystem.mapper.UserMapper">
 
-    <resultMap id="BaseResultMap" type="yang.example.ratingsystem.model.entity.User">
+    <resultMap id="BaseResultMap" type="com.yang.ratingsystem.model.User">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="username" column="username" jdbcType="VARCHAR"/>
     </resultMap>
