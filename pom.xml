@@ -112,6 +112,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-pulsar</artifactId>
         </dependency>
+        <!-- Google Guava 库，用于布隆过滤器实现 -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.0.0-jre</version>
+        </dependency>
 
 
     </dependencies>

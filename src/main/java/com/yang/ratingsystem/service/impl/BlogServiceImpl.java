@@ -18,6 +18,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,18 +59,30 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         Map<Long, Boolean> blogIdHasThumbMap = new HashMap<>();
         if (ObjUtil.isNotEmpty(loginUser)) {
 //            Set<Long> blogIdSet = blogList.stream().map(Blog::getId).collect(Collectors.toSet());
-            List<Object> blogIdList = blogList.stream().map(blog -> blog.getId()).collect(Collectors.toList());
+            // 创建一个博客ID字符串列表的映射关系
+            List<String> blogIdStrList = blogList.stream()
+                .map(blog -> blog.getId().toString())
+                .collect(Collectors.toList());
+            
+            // 将List<String>转换为Collection<Object>
+            Collection<Object> blogIdObjList = new ArrayList<>(blogIdStrList.size());
+            for (String idStr : blogIdStrList) {
+                blogIdObjList.add(idStr);
+            }
+            
             // 获取点赞
 //            List<Thumb> thumbList = thumbService.lambdaQuery()
 //                    .eq(Thumb::getUserId, loginUser.getId())
 //                    .in(Thumb::getBlogId, blogIdSet)
 //                    .list();
-            List<Object> thumbList = redisTemplate.opsForHash().multiGet(ThumbConstant.USER_THUMB_KEY_PREFIX+loginUser.getId(),blogIdList);
+            List<Object> thumbList = redisTemplate.opsForHash().multiGet(ThumbConstant.USER_THUMB_KEY_PREFIX+loginUser.getId(), blogIdObjList);
+            
             for (int i = 0; i < thumbList.size(); i++) {
                 if(thumbList.get(i)==null){
                     continue;
                 }
-                blogIdHasThumbMap.put(Long.valueOf(blogIdList.get(i).toString()),true);
+                // 将String转回Long
+                blogIdHasThumbMap.put(Long.valueOf(blogIdStrList.get(i)), true);
             }
 //            thumbList.forEach(blogThumb -> blogIdHasThumbMap.put(blogThumb.getBlogId(), true));
         }

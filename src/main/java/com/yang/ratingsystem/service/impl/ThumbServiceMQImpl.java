@@ -3,6 +3,7 @@ package com.yang.ratingsystem.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yang.ratingsystem.constant.RedisLuaScriptConstant;
 import com.yang.ratingsystem.constant.ThumbConstant;
+import com.yang.ratingsystem.filter.BloomFilterService;
 import com.yang.ratingsystem.listener.thumb.msg.ThumbEvent;
 import com.yang.ratingsystem.manager.cache.CacheManager;
 import com.yang.ratingsystem.mapper.ThumbMapper;
@@ -46,6 +47,8 @@ public class ThumbServiceMQImpl extends ServiceImpl<ThumbMapper, Thumb>
     private final RedisTemplate<String, Object> redisTemplate;
 
     private final Producer<ThumbEvent> thumbEventProducer;
+    
+    private final BloomFilterService bloomFilterService;
     
     @Value("${pulsar.topic:thumb-topic}")
     private String thumbTopic;
