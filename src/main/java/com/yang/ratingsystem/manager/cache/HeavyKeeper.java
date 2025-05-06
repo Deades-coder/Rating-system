@@ -5,7 +5,9 @@ import lombok.Data;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author 小小星仔
@@ -23,8 +25,10 @@ public class HeavyKeeper implements TopK {
     private final Random random;
     private long total;
     private final int minCount;
+    private final long ttlMillis; // 新增TTL字段
+    private final Map<String, Long> keyExpiryMap = new ConcurrentHashMap<>();
 
-    public HeavyKeeper(int k, int width, int depth, double decay, int minCount) {
+    public HeavyKeeper(int k, int width, int depth, double decay, int minCount, long ttl, TimeUnit unit) {
         this.k = k;
         this.width = width;
         this.depth = depth;
@@ -46,10 +50,13 @@ public class HeavyKeeper implements TopK {
         this.expelledQueue = new LinkedBlockingQueue<>();
         this.random = new Random();
         this.total = 0;
+        this.ttlMillis = unit.toMillis(ttl);
     }
 
     @Override
     public AddResult add(String key, int increment) {
+        // 检查并清理过期key
+        cleanExpiredKeys();
         byte[] keyBytes = key.getBytes();
         long itemFingerprint = hash(keyBytes);
         int maxCount = 0;
@@ -94,6 +101,7 @@ public class HeavyKeeper implements TopK {
         synchronized (minHeap) {
             boolean isHot = false;
             String expelled = null;
+            AddResult result = null; // 添加result变量声明
 
             Optional<Node> existing = minHeap.stream()
                     .filter(n -> n.key.equals(key))
@@ -103,6 +111,7 @@ public class HeavyKeeper implements TopK {
                 minHeap.remove(existing.get());
                 minHeap.add(new Node(key, maxCount));
                 isHot = true;
+                result = new AddResult(null, isHot, key); // 创建result对象
             } else {
                 if (minHeap.size() < k || maxCount >= Objects.requireNonNull(minHeap.peek()).count) {
                     Node newNode = new Node(key, maxCount);
@@ -112,15 +121,25 @@ public class HeavyKeeper implements TopK {
                     }
                     minHeap.add(newNode);
                     isHot = true;
+                    result = new AddResult(expelled, isHot, key); // 创建result对象
+                } else {
+                    result = new AddResult(null, false, key); // 处理不进入TopK的情况
                 }
             }
 
-            return new AddResult(expelled, isHot, key);
+            // 更新或设置key的过期时间
+            keyExpiryMap.put(key, System.currentTimeMillis() + ttlMillis);
+            return result; // 返回正确的结果
         }
+        
+        // 更新或设置key的过期时间
+        keyExpiryMap.put(key, System.currentTimeMillis() + ttlMillis);
+        return result;
     }
 
     @Override
     public List<Item> list() {
+        cleanExpiredKeys();
         synchronized (minHeap) {
             List<Item> result = new ArrayList<>(minHeap.size());
             for (Node node : minHeap) {
@@ -180,6 +199,45 @@ public class HeavyKeeper implements TopK {
 
     private static int hash(byte[] data) {
         return HashUtil.murmur32(data);
+    }
+
+    private void cleanExpiredKeys() {
+        long now = System.currentTimeMillis();
+        keyExpiryMap.entrySet().removeIf(entry -> {
+            if (entry.getValue() <= now) {
+                // 从所有数据结构中移除过期key
+                removeKey(entry.getKey());
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void removeKey(String key) {
+        // 1. 从minHeap中移除
+        synchronized (minHeap) {
+            minHeap.removeIf(node -> node.key.equals(key));
+        }
+        
+        // 2. 从buckets中移除
+        byte[] keyBytes = key.getBytes();
+        long fingerprint = hash(keyBytes);
+        for (int i = 0; i < depth; i++) {
+            int bucketNumber = Math.abs(hash(keyBytes)) % width;
+            Bucket bucket = buckets[i][bucketNumber];
+            synchronized (bucket) {
+                if (bucket.fingerprint == fingerprint) {
+                    bucket.count = 0;
+                    bucket.fingerprint = 0;
+                }
+            }
+        }
+        
+        // 3. 从expelledQueue中移除
+        expelledQueue.removeIf(item -> item.key().equals(key));
+        
+        // 4. 从keyExpiryMap中移除
+        keyExpiryMap.remove(key);
     }
 
 }

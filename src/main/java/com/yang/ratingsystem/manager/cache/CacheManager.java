@@ -29,16 +29,13 @@ public class CacheManager {
     @Bean
     public TopK getHotKeyDetector() {
         hotKeyDetector = new HeavyKeeper(
-                // 监控 Top 100 Key
-                100,
-                // 哈希表宽度
-                100000,
-                // 哈希表深度
-                5,
-                // 衰减系数
-                0.92,
-                // 最小出现 10 次才记录
-                10
+                100,       // Top 100 Key
+                100000,    // 哈希表宽度
+                5,         // 哈希表深度
+                0.92,      // 衰减系数
+                5,         // 最小计数阈值
+                1,         // TTL 1小时
+                TimeUnit.HOURS
         );
         return hotKeyDetector;
     }
